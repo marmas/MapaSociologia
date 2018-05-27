@@ -1,0 +1,296 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/map-icons.css">
+
+  <script src="js/map-icons.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
+</head>
+
+<body>
+  <!--[if lte IE 9]>
+    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+  <![endif]-->
+
+  <!-- Add your site or application content here -->
+  <div id="map"></div>
+  <div id="legend"><h3>Referencias</h3></div>
+  
+
+  <div class="modal">
+      <div class="modal-content">
+          <span class="close-button">&times;</span>
+          <h3>Complete los datos</h3>
+          <form id="addPlaceForm" action="">
+            <label for="">Nombre del lugar</label>
+            <input type="text" id="namePlace" name="name" placeholder=""><br>
+            <label for="">Tipo de Capital</label>
+            <select id="typeCapital" name="typeCapital">
+                <option value="Economico">Económico</option>
+                <option value="Cultural">Cultural</option>
+                <option value="Social">Social</option>
+            </select>
+            <br>
+            <input type="submit" value="Agregar">
+            
+          </form>
+      </div>
+  </div>
+
+ <script>
+      var map;
+      var stateUI = 'onlyShow';
+
+      var modal = document.querySelector(".modal");
+      var closeButton = document.querySelector(".close-button");
+      var addPlaceForm = document.querySelector("#addPlaceForm");
+
+      closeButton.addEventListener("click", toggleModal);
+      window.addEventListener("click", windowOnClick);
+      addPlaceForm.addEventListener("submit", formOnClick);
+
+
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyA8uVRPyFz43onfHN-zx19zFdX90wRIFqs",
+        authDomain: "mapasociologia.firebaseapp.com",
+        databaseURL: "https://mapasociologia.firebaseio.com",
+        projectId: "mapasociologia",
+        storageBucket: "mapasociologia.appspot.com",
+        messagingSenderId: "527253661930"
+      };
+      firebase.initializeApp(config);
+     
+      /**
+      * Data object to be written to Firebase.
+      */
+      var data = {
+        name: 'Sin Nombre',
+        type: 'Defecto',
+        lat: null,
+        lng: null
+      };
+
+      var icons = {
+        Cultural: {
+          name: 'Cultural',
+          icon: 'map-icon-museum',
+          fillColor: '',
+          path: mapIcons.shapes.SQUARE_PIN
+        },
+        Economico: {
+          name: 'Económico',
+          icon: 'map-icon-finance',
+          fillColor: '#216C2A',
+          path: mapIcons.shapes.MAP_PIN
+        },
+        Social: {
+          name: 'Social',
+          icon: 'map-icon-finance',
+          fillColor: '#203D6C',
+          path: mapIcons.shapes.SQUARE_ROUNDED
+        },
+        Defecto:{
+          name:'Sin tipo',
+          icon: 'map-icon-finance',
+          fillColor: '#203D6C',
+          path: mapIcons.shapes.SQUARE_ROUNDED
+        }
+      };
+
+      function toggleModal() {
+          modal.classList.toggle("show-modal");
+      }
+
+      function windowOnClick(event) {
+          if (event.target === modal) {
+              toggleModal();
+          }
+      }
+
+      function formOnClick(e){
+        e.preventDefault();
+        data.name = document.getElementById("namePlace").value;
+        data.type = document.getElementById("typeCapital").value;
+       
+        addToFirebase()
+      }
+
+      function modalManager(e){
+        toggleModal();
+      }
+
+      /**
+     * Adds a click to firebase.
+     * @param {Object} data The data to be added to firebase.
+     *     It contains the lat, lng, name and type.
+     */
+      function addToFirebase() {    
+        firebase.database().ref('places').push({
+          name: data.name,
+          type: data.type,
+          lat: data.lat,
+          lng: data.lng,
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        stateUI = 'onlyShow';
+        toggleModal();
+      }
+      /**
+      * Starting point for running the program. Authenticates the user.
+      * @param {function()} onAuthSuccess - Called when authentication succeeds.
+      */
+      function initAuthentication(onAuthSuccess) {
+        firebase.auth().signInAnonymously().catch(function(error) {
+          // Handle Errors here.
+          var errorCode = error.code;
+          var errorMessage = error.message;
+          console.log('Login Failed!', error.message);
+        });
+
+        firebase.auth().onAuthStateChanged(function(user) {
+          if (user) {
+            // User is signed in.
+            var isAnonymous = user.isAnonymous;
+            //data.uid = user.uid;
+            //console.log('Login Success!', uid);
+
+            queryAllPlaces();
+          } else {// User is signed out
+                }
+          });
+      };
+
+      function queryAllPlaces() {
+        var places = firebase.database().ref('places').on("child_added", function(snapshot) {
+        //console.log(snapshot.child("lat").val());
+
+        var lat = snapshot.child("lat").val();
+        var lng = snapshot.child("lng").val();
+        var type = snapshot.child("type").val();
+        var latLng = new google.maps.LatLng(lat, lng);
+        var marker = new mapIcons.Marker({
+          position: latLng,
+          map: map,
+          icon: {
+            path: icons[type].path,
+            fillColor: icons[type].fillColor,
+            fillOpacity: 1,
+            strokeColor: '',
+            strokeWeight: 0
+          },
+          map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
+      
+          });
+        });
+
+        var legend = document.getElementById('legend');
+        for (var key in icons) {
+          var type = icons[key];
+          var name = type.name;
+          var icon = type.icon;
+          var div = document.createElement('div');
+          div.innerHTML = '<span class="map-icon ' + icon + '">  '+ name +'</span>' ;
+          legend.appendChild(div);
+        }
+
+        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
+      };
+      
+      /**
+       * The AddPlaceControl adds a control to the map that recenters the map on
+       * Chicago.
+       * @constructor
+       * @param {!Element} controlDiv
+       * @param {!google.maps.Map} map
+       */
+       function AddPlaceControl(controlDiv, map) {
+        // We set up a variable for this since we're adding event listeners
+        // later.
+        var control = this;
+
+        // Set the center property upon construction
+        //control.center_ = center;
+        controlDiv.style.clear = 'both';
+
+        // Set CSS for the control border
+        var addPlaceUI = document.createElement('div');
+        addPlaceUI.id = 'addPlaceUI';
+        addPlaceUI.title = 'Click para agregar un lugar';
+        controlDiv.appendChild(addPlaceUI);
+
+        // Set CSS for the control interior
+        var addPlaceText = document.createElement('div');
+        addPlaceText.id = 'addPlaceText';
+        addPlaceText.innerHTML = 'Agregar un lugar';
+        addPlaceUI.appendChild(addPlaceText);
+
+        // Set up the click event listener for 'Center Map': Set the center of
+        // the map
+        // to the current center of the control.
+        addPlaceUI.addEventListener('click', function() {
+          stateUI = 'addPlace';
+          console.log("stateUI = " +stateUI);
+        });
+
+      }
+
+	      
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 14,
+          center: new google.maps.LatLng(-27.479349, -58.806646),
+          mapTypeId: 'terrain' 
+        });
+        
+        // Listen for clicks and add the location of the click to firebase.
+        map.addListener('click', function(e) {
+          if (stateUI == 'addPlace') { 
+            data.lat = e.latLng.lat();
+            data.lng = e.latLng.lng(),
+            modalManager(data);  }
+        });
+
+        initAuthentication();
+        
+        // Create the DIV to hold the control and call the CenterControl()
+        // constructor
+        // passing in this DIV.
+        var addPlaceDiv = document.createElement('div');
+        var addPlace = new AddPlaceControl(addPlaceDiv, map);
+
+        addPlaceDiv.index = 1;
+        addPlaceDiv.style['padding-top'] = '10px';
+        map.controls[google.maps.ControlPosition.RIGHT_TOP].push(addPlaceDiv);
+      }
+    </script>
+
+  <script src="js/vendor/modernizr-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.3.1.min.js"><\/script>')</script>
+  <script async defer  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlWcUHpRpng8i_OpMhBCJFUBiI69422UQ&callback=initMap"></script>
+  <script src="js/plugins.js"></script>
+  <script src="js/main.js"></script>
+
+  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+  <script>
+    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
+    ga('create', 'UA-XXXXX-Y', 'auto'); ga('send', 'pageview')
+  </script>
+  <script src="https://www.google-analytics.com/analytics.js" async defer></script>
+</body>
+
+</html>

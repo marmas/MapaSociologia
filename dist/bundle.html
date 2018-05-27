@@ -1,0 +1,79 @@
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ (function(module, exports) {
+
+module.exports = "<!doctype html>\n<html class=\"no-js\" lang=\"\">\n\n<head>\n  <meta charset=\"utf-8\">\n  <meta http-equiv=\"x-ua-compatible\" content=\"ie=edge\">\n  <title></title>\n  <meta name=\"description\" content=\"\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n\n  <link rel=\"manifest\" href=\"site.webmanifest\">\n  <link rel=\"apple-touch-icon\" href=\"icon.png\">\n  <!-- Place favicon.ico in the root directory -->\n\n  <link rel=\"stylesheet\" href=\"css/normalize.css\">\n  <link rel=\"stylesheet\" href=\"css/main.css\">\n  <link rel=\"stylesheet\" href=\"css/map-icons.css\">\n\n  <script src=\"js/map-icons.js\"></script>\n  <script src=\"https://www.gstatic.com/firebasejs/5.0.4/firebase.js\"></script>\n</head>\n\n<body>\n  <!--[if lte IE 9]>\n    <p class=\"browserupgrade\">You are using an <strong>outdated</strong> browser. Please <a href=\"https://browsehappy.com/\">upgrade your browser</a> to improve your experience and security.</p>\n  <![endif]-->\n\n  <!-- Add your site or application content here -->\n  <div id=\"map\"></div>\n  <div id=\"legend\"><h3>Referencias</h3></div>\n\n <script>\n      // Initialize Firebase\n      var config = {\n        apiKey: \"AIzaSyA8uVRPyFz43onfHN-zx19zFdX90wRIFqs\",\n        authDomain: \"mapasociologia.firebaseapp.com\",\n        databaseURL: \"https://mapasociologia.firebaseio.com\",\n        projectId: \"mapasociologia\",\n        storageBucket: \"mapasociologia.appspot.com\",\n        messagingSenderId: \"527253661930\"\n      };\n      firebase.initializeApp(config);\n     \n      /**\n      * Data object to be written to Firebase.\n      */\n      var data = {\n        name: null,\n        type: null,\n        lat: null,\n        lng: null\n      };\n\n      var icons = {\n        Cultural: {\n          name: 'Cultural',\n          icon: 'map-icon-museum',\n          fillColor: '',\n          path: mapIcons.shapes.SQUARE_PIN\n        },\n        Economico: {\n          name: 'Económico',\n          icon: 'map-icon-finance',\n          fillColor: '#216C2A',\n          path: mapIcons.shapes.MAP_PIN\n        },\n        Social: {\n          name: 'Social',\n          icon: 'map-icon-finance',\n          fillColor: '#203D6C',\n          path: mapIcons.shapes.SQUARE_ROUNDED\n        }\n      };\n\n      /**\n      * Starting point for running the program. Authenticates the user.\n      * @param {function()} onAuthSuccess - Called when authentication succeeds.\n      */\n      function initAuthentication(onAuthSuccess) {\n        firebase.auth().signInAnonymously().catch(function(error) {\n          // Handle Errors here.\n          var errorCode = error.code;\n          var errorMessage = error.message;\n          console.log('Login Failed!', error.message);\n        });\n\n        firebase.auth().onAuthStateChanged(function(user) {\n          if (user) {\n            // User is signed in.\n            var isAnonymous = user.isAnonymous;\n            //data.uid = user.uid;\n            //console.log('Login Success!', uid);\n\n            queryAllPlaces();\n          } else {// User is signed out\n                }\n          });\n      };\n\n      function queryAllPlaces() {\n        var places = firebase.database().ref('places').on(\"child_added\", function(snapshot) {\n        //console.log(snapshot.child(\"lat\").val());\n\n        var lat = snapshot.child(\"lat\").val();\n        var lng = snapshot.child(\"lng\").val();\n        var type = snapshot.child(\"type\").val();\n        var latLng = new google.maps.LatLng(lat, lng);\n        var marker = new mapIcons.Marker({\n          position: latLng,\n          map: map,\n          icon: {\n            path: icons[type].path,\n            fillColor: icons[type].fillColor,\n            fillOpacity: 1,\n            strokeColor: '',\n            strokeWeight: 0\n          },\n          map_icon_label: '<span class=\"map-icon ' + icons[type].icon + '\"></span>'\n      \n          });\n        });\n\n        var legend = document.getElementById('legend');\n        for (var key in icons) {\n          var type = icons[key];\n          var name = type.name;\n          var icon = type.icon;\n          var div = document.createElement('div');\n          div.innerHTML = '<span class=\"map-icon ' + icon + '\">  '+ name +'</span>' ;\n          legend.appendChild(div);\n        }\n\n        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);\n      };\n\n      var map;\n      function initMap() {\n        map = new google.maps.Map(document.getElementById('map'), {\n          zoom: 14,\n          center: new google.maps.LatLng(-27.479349, -58.806646),\n          mapTypeId: 'terrain' \n        });\n        \n        // Listen for clicks and add the location of the click to firebase.\n        map.addListener('click', function(e) {\n          data.lat = e.latLng.lat();\n          data.lng = e.latLng.lng();\n          data.type = \"Cultural\";\n          data.name = \"Nombre\";\n          addToFirebase(data);\n        });\n\n        initAuthentication();\n      }\n\n      /**\n     * Adds a click to firebase.\n     * @param {Object} data The data to be added to firebase.\n     *     It contains the lat, lng, name and type.\n     */\n      function addToFirebase(data) {\n        firebase.database().ref('places').push({\n          name: data.name,\n          type: data.type,\n          lat: data.lat,\n          lng: data.lng,\n          createdAt: firebase.database.ServerValue.TIMESTAMP\n        });\n      }\n    </script>\n\n  <script src=\"js/vendor/modernizr-3.6.0.min.js\"></script>\n  <script src=\"https://code.jquery.com/jquery-3.3.1.min.js\" integrity=\"sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=\" crossorigin=\"anonymous\"></script>\n  <script>window.jQuery || document.write('<script src=\"js/vendor/jquery-3.3.1.min.js\"><\\/script>')</script>\n  <script async defer  src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyBlWcUHpRpng8i_OpMhBCJFUBiI69422UQ&callback=initMap\"></script>\n  <script src=\"js/plugins.js\"></script>\n  <script src=\"js/main.js\"></script>\n\n  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->\n  <script>\n    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;\n    ga('create', 'UA-XXXXX-Y', 'auto'); ga('send', 'pageview')\n  </script>\n  <script src=\"https://www.google-analytics.com/analytics.js\" async defer></script>\n</body>\n\n</html>\n";
+
+/***/ })
+/******/ ]);

@@ -1,0 +1,187 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/map-icons.css">
+
+  <script src="js/map-icons.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
+</head>
+
+<body>
+  <!--[if lte IE 9]>
+    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+  <![endif]-->
+
+  <!-- Add your site or application content here -->
+  <div id="map"></div>
+  <div id="legend"><h3>Referencias</h3></div>
+
+ <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyA8uVRPyFz43onfHN-zx19zFdX90wRIFqs",
+        authDomain: "mapasociologia.firebaseapp.com",
+        databaseURL: "https://mapasociologia.firebaseio.com",
+        projectId: "mapasociologia",
+        storageBucket: "mapasociologia.appspot.com",
+        messagingSenderId: "527253661930"
+      };
+      firebase.initializeApp(config);
+     
+      /**
+      * Data object to be written to Firebase.
+      */
+      var data = {
+        name: null,
+        type: null,
+        lat: null,
+        lng: null
+      };
+
+      var icons = {
+        Cultural: {
+          name: 'Cultural',
+          icon: 'map-icon-museum',
+          fillColor: '',
+          path: mapIcons.shapes.SQUARE_PIN
+        },
+        Economico: {
+          name: 'Económico',
+          icon: 'map-icon-finance',
+          fillColor: '#216C2A',
+          path: mapIcons.shapes.MAP_PIN
+        },
+        Social: {
+          name: 'Social',
+          icon: 'map-icon-finance',
+          fillColor: '#203D6C',
+          path: mapIcons.shapes.SQUARE_ROUNDED
+        }
+      };
+
+      /**
+      * Starting point for running the program. Authenticates the user.
+      * @param {function()} onAuthSuccess - Called when authentication succeeds.
+      */
+      function initAuthentication(onAuthSuccess) {
+        firebase.auth().signInAnonymously().catch(function(error) {
+          // Handle Errors here.
+          var errorCode = error.code;
+          var errorMessage = error.message;
+          console.log('Login Failed!', error.message);
+        });
+
+        firebase.auth().onAuthStateChanged(function(user) {
+          if (user) {
+            // User is signed in.
+            var isAnonymous = user.isAnonymous;
+            //data.uid = user.uid;
+            //console.log('Login Success!', uid);
+
+            queryAllPlaces();
+          } else {// User is signed out
+                }
+          });
+      };
+
+      function queryAllPlaces() {
+        var places = firebase.database().ref('places').on("child_added", function(snapshot) {
+        //console.log(snapshot.child("lat").val());
+
+        var lat = snapshot.child("lat").val();
+        var lng = snapshot.child("lng").val();
+        var type = snapshot.child("type").val();
+        var latLng = new google.maps.LatLng(lat, lng);
+        var marker = new mapIcons.Marker({
+          position: latLng,
+          map: map,
+          icon: {
+            path: icons[type].path,
+            fillColor: icons[type].fillColor,
+            fillOpacity: 1,
+            strokeColor: '',
+            strokeWeight: 0
+          },
+          map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
+      
+          });
+        });
+
+        var legend = document.getElementById('legend');
+        for (var key in icons) {
+          var type = icons[key];
+          var name = type.name;
+          var icon = type.icon;
+          var div = document.createElement('div');
+          div.innerHTML = '<span class="map-icon ' + icon + '">  '+ name +'</span>' ;
+          legend.appendChild(div);
+        }
+
+        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
+      };
+
+      var map;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 14,
+          center: new google.maps.LatLng(-27.479349, -58.806646),
+          mapTypeId: 'terrain' 
+        });
+        
+        // Listen for clicks and add the location of the click to firebase.
+        map.addListener('click', function(e) {
+          data.lat = e.latLng.lat();
+          data.lng = e.latLng.lng();
+          data.type = "Cultural";
+          data.name = "Nombre";
+          addToFirebase(data);
+        });
+
+        initAuthentication();
+      }
+
+      /**
+     * Adds a click to firebase.
+     * @param {Object} data The data to be added to firebase.
+     *     It contains the lat, lng, name and type.
+     */
+      function addToFirebase(data) {
+        firebase.database().ref('places').push({
+          name: data.name,
+          type: data.type,
+          lat: data.lat,
+          lng: data.lng,
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+    </script>
+
+  <script src="js/vendor/modernizr-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.3.1.min.js"><\/script>')</script>
+  <script async defer  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlWcUHpRpng8i_OpMhBCJFUBiI69422UQ&callback=initMap"></script>
+  <script src="js/plugins.js"></script>
+  <script src="js/main.js"></script>
+
+  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+  <script>
+    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
+    ga('create', 'UA-XXXXX-Y', 'auto'); ga('send', 'pageview')
+  </script>
+  <script src="https://www.google-analytics.com/analytics.js" async defer></script>
+</body>
+
+</html>
