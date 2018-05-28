@@ -118,7 +118,7 @@ textarea {
     font-size: 25px;
   }
 
-  #addPlaceUI {
+  #addPlaceUI, #deletePlaceUI {
     background-color: #fff;
     border: 2px solid #fff;
     border-radius: 3px;
@@ -128,7 +128,7 @@ textarea {
     margin-bottom: 22px;
     text-align: center;
   }
-  #addPlaceText{
+  #addPlaceText, #deletePlaceText{
     color: rgb(25,25,25);
     font-family: Roboto,Arial,sans-serif;
     font-size: 20px;

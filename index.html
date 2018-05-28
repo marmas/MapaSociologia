@@ -58,11 +58,6 @@
       var closeButton = document.querySelector(".close-button");
       var addPlaceForm = document.querySelector("#addPlaceForm");
 
-      closeButton.addEventListener("click", toggleModal);
-      window.addEventListener("click", windowOnClick);
-      addPlaceForm.addEventListener("submit", formOnClick);
-
-
       // Initialize Firebase
       var config = {
         apiKey: "AIzaSyA8uVRPyFz43onfHN-zx19zFdX90wRIFqs",
@@ -111,6 +106,14 @@
         }*/
       };
 
+      function setListeners(){
+       closeButton.addEventListener("click", toggleModal);
+       window.addEventListener("click", windowOnClick);
+       addPlaceForm.addEventListener("submit", formOnClick);
+
+       //firebase.database().ref('places').on("child_removed", onRemovedPlace);
+      }
+
       function toggleModal() {
           modal.classList.toggle("show-modal");
           if (stateUI == 'addPlace'){ stateUI = 'onlyShow'}
@@ -130,6 +133,30 @@
        
         addToFirebase()
       }
+
+      function onRemovedPlace(e){
+        console.log(e.ket);
+
+
+
+        /*var lat = snapshot.child("lat").val();
+        var lng = snapshot.child("lng").val();
+        var type = snapshot.child("type").val();
+        var latLng = new google.maps.LatLng(lat, lng);
+        var marker = new mapIcons.Marker({
+          position: latLng,
+          map: map,
+          icon: {
+            path: icons[type].path,
+            fillColor: icons[type].fillColor,
+            fillOpacity: 1,
+            strokeColor: '',
+            strokeWeight: 0
+          },
+          map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
+      
+          });*/ 
+        }
 
       function modalManager(e){
         toggleModal();
@@ -169,22 +196,21 @@
             var isAnonymous = user.isAnonymous;
             //data.uid = user.uid;
             //console.log('Login Success!', uid);
-
-            queryAllPlaces();
-          } else {// User is signed out
-                }
+            
+          } 
           });
       };
 
       function queryAllPlaces() {
         var places = firebase.database().ref('places').on("child_added", function(snapshot) {
-        //console.log(snapshot.child("lat").val());
-
+            
+        var key = snapshot.key;
         var lat = snapshot.child("lat").val();
         var lng = snapshot.child("lng").val();
         var type = snapshot.child("type").val();
         var latLng = new google.maps.LatLng(lat, lng);
         var marker = new mapIcons.Marker({
+          key: key,
           position: latLng,
           map: map,
           icon: {
@@ -193,10 +219,14 @@
             fillOpacity: 1,
             strokeColor: '',
             strokeWeight: 0
-          },
+            },
           map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
-      
-          });
+            });
+         
+        //intento de hacer andar funcionalidad de remove    
+        //marker.addEventListener('click', onRemovedPlace);
+        //console.log(marker.key);
+
         });
 
         var legend = document.getElementById('legend');
@@ -211,10 +241,42 @@
 
         map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
       };
-      
+     
       /**
-       * The AddPlaceControl adds a control to the map that recenters the map on
-       * Chicago.
+       * The DeletePlaceControl deletes a place of the map 
+       * @constructor
+       * @param {!Element} controlDiv
+       * @param {!google.maps.Map} map
+       */
+       function DeletePlaceControl(controlDiv, map) {
+        // We set up a variable for this since we're adding event listeners
+        // later.
+        var control = this;
+
+        controlDiv.style.clear = 'both';
+
+        // Set CSS for the control border
+        var deletePlaceUI = document.createElement('div');
+        deletePlaceUI.id = 'deletePlaceUI';
+        deletePlaceUI.title = 'Click para borrar un lugar';
+        controlDiv.appendChild(deletePlaceUI);
+
+        // Set CSS for the control interior
+        var deletePlaceText = document.createElement('div');
+        deletePlaceText.id = 'deletePlaceText';
+        deletePlaceText.innerHTML = 'Borrar un lugar';
+        deletePlaceUI.appendChild(deletePlaceText);
+
+        // Set up the click event listener for 
+        deletePlaceUI.addEventListener('click', function() {
+          stateUI = 'deletePlace';
+          console.log("stateUI = " +stateUI);
+        });
+
+      }      
+
+      /**
+       * The AddPlaceControl adds a place to the map 
        * @constructor
        * @param {!Element} controlDiv
        * @param {!google.maps.Map} map
@@ -267,16 +329,25 @@
         });
 
         initAuthentication();
+        queryAllPlaces();
         
-        // Create the DIV to hold the control and call the CenterControl()
-        // constructor
-        // passing in this DIV.
+        setListeners();
+      
+        // Create the DIV to hold the addPlace control 
         var addPlaceDiv = document.createElement('div');
         var addPlace = new AddPlaceControl(addPlaceDiv, map);
 
         addPlaceDiv.index = 1;
         addPlaceDiv.style['padding-top'] = '10px';
         map.controls[google.maps.ControlPosition.RIGHT_TOP].push(addPlaceDiv);
+
+        // Create the DIV to hold the removePlace control 
+        var deletePlaceDiv = document.createElement('div');
+        var deletePlace = new DeletePlaceControl(deletePlaceDiv, map);
+
+        deletePlaceDiv.index = 1;
+        deletePlaceDiv.style['padding-top'] = '10px';
+        map.controls[google.maps.ControlPosition.RIGHT_TOP].push(deletePlaceDiv);
       }
     </script>
 
