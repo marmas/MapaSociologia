@@ -88,7 +88,7 @@
         Cultural: {
           name: 'Cultural',
           icon: 'map-icon-museum',
-          fillColor: '',
+          fillColor: 'b1d0b5',
           path: mapIcons.shapes.SQUARE_PIN
         },
         Economico: {
@@ -99,24 +99,26 @@
         },
         Social: {
           name: 'Social',
-          icon: 'map-icon-finance',
+          icon: 'map-icon-postal-code',
           fillColor: '#203D6C',
           path: mapIcons.shapes.SQUARE_ROUNDED
         },
-        Defecto:{
+        /*Defecto:{
           name:'Sin tipo',
-          icon: 'map-icon-finance',
+          icon: 'map-icon-search',
           fillColor: '#203D6C',
           path: mapIcons.shapes.SQUARE_ROUNDED
-        }
+        }*/
       };
 
       function toggleModal() {
           modal.classList.toggle("show-modal");
+          if (stateUI == 'addPlace'){ stateUI = 'onlyShow'}
       }
 
       function windowOnClick(event) {
           if (event.target === modal) {
+              stateUI = 'onlyShow';
               toggleModal();
           }
       }
