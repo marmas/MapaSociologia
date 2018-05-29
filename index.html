@@ -52,12 +52,14 @@
   </div>
 
  <script>
-      var map;
-      var stateUI = 'onlyShow';
+      var map, addPlaceUI, deletePlaceUI;
+      var stateUI = 'onlyShow'; 
 
       var modal = document.querySelector(".modal");
       var closeButton = document.querySelector(".close-button");
       var addPlaceForm = document.querySelector("#addPlaceForm");
+
+      var markers = {};
 
       // Initialize Firebase
       var config = {
@@ -69,6 +71,8 @@
         messagingSenderId: "527253661930"
       };
       firebase.initializeApp(config);
+
+      var placesRef = firebase.database().ref('places');
      
       /**
       * Data object to be written to Firebase.
@@ -112,7 +116,15 @@
        window.addEventListener("click", windowOnClick);
        addPlaceForm.addEventListener("submit", formOnClick);
 
-       //firebase.database().ref('places').on("child_removed", onRemovedPlace);
+        placesRef.on("child_removed", function(marker) {
+          stateUI = "";
+          var key = marker.key;
+
+          console.log("TO REMOVE", markers);
+          markers[key].setMap(null);
+          //marker.getRef().remove();
+resetActionStyle(deletePlaceUI);
+       });
       }
 
       function toggleModal() {
@@ -135,30 +147,6 @@
         addToFirebase()
       }
 
-      function onRemovedPlace(e){
-        console.log(e.ket);
-
-
-
-        /*var lat = snapshot.child("lat").val();
-        var lng = snapshot.child("lng").val();
-        var type = snapshot.child("type").val();
-        var latLng = new google.maps.LatLng(lat, lng);
-        var marker = new mapIcons.Marker({
-          position: latLng,
-          map: map,
-          icon: {
-            path: icons[type].path,
-            fillColor: icons[type].fillColor,
-            fillOpacity: 1,
-            strokeColor: '',
-            strokeWeight: 0
-          },
-          map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
-      
-          });*/ 
-        }
-
       function modalManager(e){
         toggleModal();
       }
@@ -179,6 +167,7 @@
         stateUI = 'onlyShow';
         toggleModal();
       }
+
       /**
       * Starting point for running the program. Authenticates the user.
       * @param {function()} onAuthSuccess - Called when authentication succeeds.
@@ -195,22 +184,34 @@
           if (user) {
             // User is signed in.
             var isAnonymous = user.isAnonymous;
-            //data.uid = user.uid;
+            data.uid = user.uid;
             //console.log('Login Success!', uid);
             
           } 
           });
       };
 
+      function resetActionStyle(element) {
+        element.style.backgroundColor = "white";
+        element.style.color = "black";
+      }
+
+      function setActionStyle(element) {
+        element.style.backgroundColor = "green";
+        element.style.color = "white";
+      }
+
       function queryAllPlaces() {
-        var places = firebase.database().ref('places').on("child_added", function(snapshot) {
-            
+        placesRef.on("child_added", function(snapshot) {
+        stateUI = "";
+        resetActionStyle(addPlaceUI);  
+
         var key = snapshot.key;
         var lat = snapshot.child("lat").val();
         var lng = snapshot.child("lng").val();
         var type = snapshot.child("type").val();
         var latLng = new google.maps.LatLng(lat, lng);
-        var marker = new mapIcons.Marker({
+        markers[key] = new mapIcons.Marker({
           key: key,
           position: latLng,
           map: map,
@@ -224,10 +225,14 @@
           map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
             });
          
-        //intento de hacer andar funcionalidad de remove    
-        //marker.addEventListener('click', onRemovedPlace);
-        //console.log(marker.key);
-
+        //console.log("MARKER", marker);  
+        markers[key].addListener('click', function() {
+          if(stateUI == "removeUI"){
+             firebase.database().ref('places/'+ key ).remove();
+          }
+        });
+      
+        //infowindow.open(map, marker);
         });
 
         var legend = document.getElementById('legend');
@@ -257,7 +262,7 @@
         controlDiv.style.clear = 'both';
 
         // Set CSS for the control border
-        var deletePlaceUI = document.createElement('div');
+        deletePlaceUI = document.createElement('div');
         deletePlaceUI.id = 'deletePlaceUI';
         deletePlaceUI.title = 'Click para borrar un lugar';
         controlDiv.appendChild(deletePlaceUI);
@@ -270,7 +275,8 @@
 
         // Set up the click event listener for 
         deletePlaceUI.addEventListener('click', function() {
-          stateUI = 'deletePlace';
+          stateUI = 'removeUI';
+          setActionStyle(deletePlaceUI);
           console.log("stateUI = " +stateUI);
         });
 
@@ -292,7 +298,7 @@
         controlDiv.style.clear = 'both';
 
         // Set CSS for the control border
-        var addPlaceUI = document.createElement('div');
+        addPlaceUI = document.createElement('div');
         addPlaceUI.id = 'addPlaceUI';
         addPlaceUI.title = 'Click para agregar un lugar';
         controlDiv.appendChild(addPlaceUI);
@@ -308,6 +314,7 @@
         // to the current center of the control.
         addPlaceUI.addEventListener('click', function() {
           stateUI = 'addPlace';
+          setActionStyle(addPlaceUI);
           console.log("stateUI = " +stateUI);
         });
 
@@ -335,7 +342,7 @@
         setListeners();
       
         // Create the DIV to hold the addPlace control 
-        var addPlaceDiv = document.createElement('div');
+        addPlaceDiv = document.createElement('div');
         var addPlace = new AddPlaceControl(addPlaceDiv, map);
 
         addPlaceDiv.index = 1;
@@ -343,7 +350,7 @@
         map.controls[google.maps.ControlPosition.RIGHT_TOP].push(addPlaceDiv);
 
         // Create the DIV to hold the removePlace control 
-        var deletePlaceDiv = document.createElement('div');
+        deletePlaceDiv = document.createElement('div');
         var deletePlace = new DeletePlaceControl(deletePlaceDiv, map);
 
         deletePlaceDiv.index = 1;
