@@ -87,27 +87,26 @@
       var icons = {
         Cultural: {
           name: 'Cultural',
-          icon: 'map-icon-museum',
-          fillColor: 'b1d0b5',
-          path: mapIcons.shapes.SQUARE_PIN
+          path: '/icons/university.png',
+          fillColor: 'b1d0b5'
         },
         Economico: {
           name: 'Económico',
+          path: '/icons/currencyexchange.png',
           icon: 'map-icon-finance',
-          fillColor: '#216C2A',
-          path: mapIcons.shapes.MAP_PIN
+          fillColor: '#216C2A'
         },
         Social: {
           name: 'Social',
+          path: '/icons/group-2.png',
           icon: 'map-icon-postal-code',
-          fillColor: '#203D6C',
-          path: mapIcons.shapes.SQUARE_ROUNDED
+          fillColor: '#203D6C'
         },
         Simbolico:{
           name:'Simbolico',
+          path: '/icons/cross-2.png',
           icon: 'map-icon-zoom-in',
-          fillColor: '#c94414',
-          path: mapIcons.shapes.SQUARE_ROUNDED
+          fillColor: '#c94414'
         }
       };
 
@@ -211,11 +210,24 @@ resetActionStyle(deletePlaceUI);
         var lng = snapshot.child("lng").val();
         var type = snapshot.child("type").val();
         var latLng = new google.maps.LatLng(lat, lng);
-        markers[key] = new mapIcons.Marker({
+        
+        var image = {
+          url: icons[type].path,
+          // This marker is 20 pixels wide by 32 pixels high.
+          size: new google.maps.Size(32, 32),
+          // The origin for this image is (0, 0).
+          origin: new google.maps.Point(0, 0),
+          // The anchor for this image is the base of the flagpole at (0, 32).
+          anchor: new google.maps.Point(0, 32)
+        };
+
+        markers[key] = new google.maps.Marker({
+        //markers[key] = new mapIcons.Marker({
           key: key,
           position: latLng,
           map: map,
-          icon: {
+          icon: image,
+          /*icon: {
             path: icons[type].path,
             fillColor: icons[type].fillColor,
             fillOpacity: 1,
@@ -223,7 +235,7 @@ resetActionStyle(deletePlaceUI);
             strokeWeight: 0
             },
           map_icon_label: '<span class="map-icon ' + icons[type].icon + '"></span>'
-            });
+          */});
          
         //console.log("MARKER", marker);  
         markers[key].addListener('click', function() {
@@ -239,9 +251,9 @@ resetActionStyle(deletePlaceUI);
         for (var key in icons) {
           var type = icons[key];
           var name = type.name;
-          var icon = type.icon;
+          var icon = type.path;
           var div = document.createElement('div');
-          div.innerHTML = '<span class="map-icon ' + icon + '">  '+ name +'</span>' ;
+          div.innerHTML = '<span><img class="icon-legend" src="' + icon + '"></img>  '+ name +'</span>' ;
           legend.appendChild(div);
         }
 
@@ -325,6 +337,18 @@ resetActionStyle(deletePlaceUI);
         map = new google.maps.Map(document.getElementById('map'), {
           zoom: 14,
           center: new google.maps.LatLng(-27.479349, -58.806646),
+          animation: google.maps.Animation.DROP,
+          styles: [
+                    {
+                      featureType: 'poi.business',
+                      stylers: [{visibility: 'off'}]
+                    },
+                    {
+                      featureType: 'transit',
+                      elementType: 'labels.icon',
+                      stylers: [{visibility: 'off'}]
+                    }
+                    ],
           mapTypeId: 'terrain' 
         });
         
